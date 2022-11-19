@@ -1,0 +1,17 @@
+{
+  "name": "fetchtoken",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@binance/connector": "^2.0.0-rc.3",
+    "cassandra-driver": "^4.6.4",
+    "node-cron": "^3.0.2"
+  },
+  "type": "module"
+}

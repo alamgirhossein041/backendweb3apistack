@@ -1,0 +1,88 @@
+#
+# This compose file will start the API Backend docker images
+#
+version: '3.9'
+services:
+  cassandra:
+    container_name: cassandra
+    image: cassandra:4.1
+    ports:
+      - "9042:9042"
+    networks:
+      - backend
+    restart: always
+    volumes:
+      - ./Database/cassandra_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+  
+  cassandra-init:
+    container_name: cassandra-init
+    image: cassandra:4.1
+    networks:
+      - backend
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    volumes:
+      - ./Database/cassandra.cql:/cassandra.cql
+    command: /bin/bash -c "echo loading cassandra keyspace && cqlsh cassandra -f /cassandra.cql"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+  
+  fetchToken:
+    container_name: fetchToken
+    build: ./FetchToken
+    image: tokenpricefetch:1.0
+    networks:
+      - backend
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+
+  walletApiServer:
+    container_name: walletApiServer
+    build: ./WalletServer
+    image: walletapiserver:1.0
+    ports:
+      - "5000:5000"
+    networks:
+      - backend
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+
+  ApiServer:
+    container_name: ApiServer
+    build: ./APIServer
+    image: apiserver:1.0
+    ports:
+      - "3000:3000"
+    networks:
+      - backend
+      - frontend
+    depends_on:
+      #walletApiServer:
+      cassandra:
+        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+
+networks:
+  backend:
+  frontend:
